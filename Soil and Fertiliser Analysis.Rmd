@@ -1,0 +1,240 @@
+---
+title: "Soil*Fertility Analysis"
+author: "Oil Stone analytics"
+date: "2/11/2021"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Loading packages----
+
+```{r packages}
+library(openxlsx)
+library(agricolae)
+library(tidyverse)
+```
+
+## Loading data ----
+
+```{r data}
+setwd('C:/Users/Matshisela/Documents/Soil-Type-and-Fertiliser-Interaction')
+dry_matter  <- read.xlsx('soil data.xlsx', 1) # First sheet
+grain_weight  <- read.xlsx('soil data.xlsx', 2) # Second sheet
+no_leaves  <- read.xlsx('soil data.xlsx', 3) # third sheet
+leaf_area <- read.xlsx('soil data.xlsx', 4) # Fourth sheet
+plant_height  <- read.xlsx('soil data.xlsx', 5) # Fifth sheet
+```
+
+
+## Descriptives ----
+
+```{r descriptives}
+summary(dry_matter)
+summary(grain_weight)
+summary(no_leaves)
+summary(leaf_area)
+summary(plant_height)
+```
+## Changes ----
+
+```{r changes}
+dry_matter$Block <- as.factor(dry_matter$Block)
+dry_matter$Soil.Type <- as.factor(dry_matter$Soil.Type)
+dry_matter$Fertiliser.Application <- as.factor(dry_matter$Fertiliser.Application)
+grain_weight$Block <- as.factor(grain_weight$Block)
+grain_weight$Soil.Type <- as.factor(grain_weight$Soil.Type)
+grain_weight$Fertiliser.Application <- as.factor(grain_weight$Fertiliser.Application)
+no_leaves$Block <- as.factor(no_leaves$Block)
+no_leaves$Soil.Type <- as.factor(no_leaves$Soil.Type)
+no_leaves$Fertiliser.Application <- as.factor(no_leaves$Fertiliser.Application)
+leaf_area$Block <- as.factor(leaf_area$Block)
+leaf_area$Soil.Type <- as.factor(leaf_area$Soil.Type)
+leaf_area$Fertiliser.Application <- as.factor(leaf_area$Fertiliser.Application)
+plant_height$Block <- as.factor(plant_height$Block)
+plant_height$Soil.Type <- as.factor(plant_height$Soil.Type)
+plant_height$Fertiliser.Application <- as.factor(plant_height$Fertiliser.Application)
+```
+
+## Exploratory data Analysis
+
+```{r graph1}
+# Dry Matter
+ggplot(dry_matter, aes(Soil.Type, Yeild, fill = Fertiliser.Application)) +
+  geom_boxplot() + geom_jitter() +
+  labs(x= 'Soil Type' , y= 'Yield', title = 'Yield vs Soil Type')
+
+# Grain Weight
+ggplot(grain_weight, aes(Soil.Type, Grain.Weight, fill = Fertiliser.Application)) +
+  geom_boxplot() + geom_jitter() +
+  labs(x= 'Soil Type' , y= 'Grain Weight', title = 'Grain Weight vs Soil Type')
+
+# Leaves
+no_leaves_long <- no_leaves %>%
+  gather(., Week, Measurement, Week3:Week5, factor_key=TRUE) 
+  
+ggplot(no_leaves_long, aes(Week, Measurement, fill = Soil.Type)) + 
+  geom_boxplot() + 
+  labs(x= "Week", y="No. of Leaves", title = "Number of leaves by week")
+
+# Leaf Area
+leaf_long <- leaf_area %>%
+  gather(., Week, Measurement, Week.4:Week8, factor_key=TRUE) 
+  
+ggplot(leaf_long, aes(Week, Measurement, fill = Soil.Type)) + 
+  geom_boxplot() + 
+  labs(x= "Week", y="Leaf Area", title = "Leaf Area by week")
+
+# Plant Height
+height_long <- plant_height %>%
+  gather(., Week, Measurement, Week3:Week.7, factor_key=TRUE) 
+  
+ggplot(height_long, aes(Week, Measurement, fill = Soil.Type)) + 
+  geom_boxplot() + 
+  labs(x= "Week", y="Plant height", title = "Plant height by week")
+
+```
+
+## Modeling
+
+ggplot(dry_matter, aes(Soil.Type, Yeild, fill = Fertiliser.Application)) +
+  geom_boxplot() + geom_jitter() +
+### Dry matter
+
+```{r dry matter}
+dry_model <- lm(Yeild~Soil.Type * Fertiliser.Application + Block, 
+                data = dry_matter)
+aov(dry_model)
+summary(dry_model)
+qqnorm(dry_model$residuals)
+qqline(dry_model$residuals)
+hist(dry_model$residuals)
+HSD.test(dry_model, "Soil.Type", console= TRUE)
+HSD.test(dry_model, "Fertiliser.Application", console= TRUE)
+```
+
+```{r grain weight}
+grain_model <- lm(Grain.Weight~Soil.Type * Fertiliser.Application + Block, 
+                data = grain_weight)
+aov(grain_model)
+summary(grain_model)
+qqnorm(grain_model$residuals)
+qqline(grain_model$residuals)
+hist(grain_model$residuals)
+HSD.test(grain_model, "Soil.Type", console= TRUE)
+HSD.test(grain_model, "Fertiliser.Application", console= TRUE)
+```
+
+### Number of leaves
+
+```{r no leaves}
+## Week 3
+nleaves_model <- lm(Week3~Soil.Type * Fertiliser.Application + Block, 
+                data = no_leaves)
+aov(nleaves_model)
+summary(nleaves_model)
+qqnorm(nleaves_model$residuals)
+qqline(nleaves_model$residuals)
+hist(nleaves_model$residuals)
+HSD.test(nleaves_model, "Soil.Type", console= TRUE)
+HSD.test(nleaves_model, "Fertiliser.Application", console= TRUE)
+```
+
+```{r no leaves2}
+## Week 5
+nleaves_model2 <- lm(Week5~Soil.Type * Fertiliser.Application + Block, 
+                data = no_leaves)
+aov(nleaves_model2)
+summary(nleaves_model2)
+qqnorm(nleaves_model2$residuals)
+qqline(nleaves_model2$residuals)
+hist(nleaves_model2$residuals)
+HSD.test(nleaves_model2, "Soil.Type", console= TRUE)
+HSD.test(nleaves_model2, "Fertiliser.Application", console= TRUE)
+```
+### Leaf area
+
+```{r leaf area}
+## Week 4
+area_model1 <- lm(Week.4~Soil.Type * Fertiliser.Application + Block, 
+                data = leaf_area)
+aov(area_model1)
+summary(area_model1)
+qqnorm(area_model1$residuals)
+qqline(area_model1$residuals)
+hist(area_model1$residuals)
+HSD.test(area_model1, "Soil.Type", console= TRUE)
+HSD.test(area_model1, "Fertiliser.Application", console= TRUE)
+```
+
+```{r leaf area2}
+## Week 6
+area_model2 <- lm(Week.6~Soil.Type * Fertiliser.Application + Block, 
+                data = leaf_area)
+aov(area_model2)
+summary(area_model2)
+qqnorm(area_model2$residuals)
+qqline(area_model2$residuals)
+hist(area_model2$residuals)
+HSD.test(area_model2, "Soil.Type", console= TRUE)
+HSD.test(area_model2, "Fertiliser.Application", console= TRUE)
+```
+
+```{r leaf area3}
+## Week 8
+area_model3 <- lm(Week8~Soil.Type * Fertiliser.Application + Block, 
+                data = leaf_area)
+aov(area_model3)
+summary(area_model3)
+qqnorm(area_model3$residuals)
+qqline(area_model3$residuals)
+hist(area_model3$residuals)
+HSD.test(area_model3, "Soil.Type", console= TRUE)
+HSD.test(area_model3, "Fertiliser.Application", console= TRUE)
+```
+
+### Plant height
+
+```{r plant height1}
+## Week 3
+height_model1 <- lm(Week3~Soil.Type * Fertiliser.Application + Block, 
+                data = plant_height)
+aov(height_model1)
+summary(height_model1)
+qqnorm(height_model1$residuals)
+qqline(height_model1$residuals)
+hist(height_model1$residuals)
+HSD.test(height_model1, "Soil.Type", console= TRUE)
+HSD.test(height_model1, "Fertiliser.Application", console= TRUE)
+```
+
+
+```{r plant height2}
+## Week 5
+height_model2 <- lm(Week.5~Soil.Type * Fertiliser.Application + Block, 
+                data = plant_height)
+aov(height_model2)
+summary(height_model2)
+qqnorm(height_model2$residuals)
+qqline(height_model2$residuals)
+hist(height_model2$residuals)
+HSD.test(height_model2, "Soil.Type", console= TRUE)
+HSD.test(height_model2, "Fertiliser.Application", console= TRUE)
+```
+
+```{r plant height3}
+## Week 7
+height_model3 <- lm(Week3~Soil.Type * Fertiliser.Application + Block, 
+                data = plant_height)
+aov(height_model3)
+summary(height_model3)
+qqnorm(height_model3$residuals)
+qqline(height_model3$residuals)
+hist(height_model3$residuals)
+HSD.test(height_model3, "Soil.Type", console= TRUE)
+HSD.test(height_model3, "Fertiliser.Application", console= TRUE)
+```
